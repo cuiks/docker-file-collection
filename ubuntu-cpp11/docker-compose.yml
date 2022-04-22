@@ -1,0 +1,28 @@
+version: "3.4"
+
+x-defaults: &default
+  restart: unless-stopped
+  # 使用当前目录的 Dockerfile 来构建 docker 镜像
+  build: .
+  volumes:
+    - ..:/home/deploy/projects/
+
+services:
+  projects-test:
+    <<: *default
+    container_name: projects-test
+    hostname: "projects"
+    user: deploy
+    working_dir: /home/deploy/projects
+    # 修改安全配置，以运行gdb server
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    # tail -f 保持 container 不要退出
+    command:
+      bash -c "sudo service ssh restart && tail -f /dev/null"
+    # 22 ssh port。 9999 业务端口
+    ports: 
+      - "127.0.0.1:2222:22"
+      - "0.0.0.0:9999:9999"
